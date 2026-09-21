@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CivicConnect AI – Smart Municipal Grievance Portal</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    .pulse-dot { animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.9); } }
+    
+    /* High contrast theme */
+    body.high-contrast {
+      background-color: #000000 !important;
+      color: #ffffff !important;
+    }
+    body.high-contrast .bg-white,
+    body.high-contrast .bg-slate-50,
+    body.high-contrast .bg-slate-100 {
+      background-color: #121212 !important;
+      color: #ffffff !important;
+      border-color: #facc15 !important;
+    }
+    body.high-contrast button,
+    body.high-contrast input,
+    body.high-contrast select,
+    body.high-contrast textarea {
+      border: 2px solid #facc15 !important;
+      color: #ffffff !important;
+      background-color: #1a1a1a !important;
+    }
+    body.high-contrast .text-slate-600,
+    body.high-contrast .text-slate-500,
+    body.high-contrast .text-slate-700 {
+      color: #fef08a !important;
+    }
+    body.high-contrast .btn-primary-a11y {
+      background-color: #facc15 !important;
+      color: #000000 !important;
+      font-weight: 800 !important;
+    }
+
+    /* Large text scaling */
+    body.large-text { font-size: 115%; }
+    body.large-text button, body.large-text input, body.large-text select { font-size: 110%; }
+  </style>
+</head>
+<body class="bg-transparent text-[var(--foreground)] antialiased p-2">
+
+  <!-- Main Portal Shell Card -->
+  <div class="bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)] rounded-2xl shadow-xl max-w-5xl mx-auto overflow-hidden">
+    
+    <!-- Top Accessibility & Language Bar -->
+    <div class="bg-slate-900 text-white text-xs px-4 py-2 flex flex-wrap items-center justify-between gap-2 border-b border-slate-800">
+      <div class="flex items-center gap-2">
+        <span class="font-bold text-amber-400">♿ Accessibility:</span>
+        <button id="btnLrgTxt" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px]" onclick="toggleLargeText()">🔍 Large Text</button>
+        <button id="btnHiCon" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px]" onclick="toggleHighContrast()">🌓 High Contrast</button>
+        <button class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px]" onclick="speakHelp()">🔊 Audio Guide</button>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-1.5">
+          <label for="langSelect" class="text-slate-300 text-[11px]">🌐 Language:</label>
+          <select id="langSelect" class="bg-slate-800 text-white border border-slate-700 rounded px-2 py-0.5 text-[11px]" onchange="changeLanguage(this.value)">
+            <option value="en">English</option>
+            <option value="te">తెలుగు (Telugu)</option>
+            <option value="hi">हिन्दी (Hindi)</option>
+            <option value="mr">मराठी (Marathi)</option>
+          </select>
+        </div>
+        <button class="px-2.5 py-0.5 rounded bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-[11px]" onclick="openRoleModal()">
+          👤 Switch Role (Citizen / Officer)
+        </button>
+        <button class="px-2.5 py-0.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] flex items-center gap-1 shadow" onclick="toggleAppFullScreen()">
+          ⛶ Full Screen
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Navigation Header with 5 Tabs -->
+    <header class="p-4 border-b border-[var(--border)] bg-[var(--background)] flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab(1)">
+        <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-blue-700 to-blue-500 text-white flex items-center justify-center font-extrabold text-2xl shadow-md">
+          🏛️
+        </div>
+        <div>
+          <h1 id="appTitle" class="text-lg font-black tracking-tight text-[var(--foreground)]">CivicConnect AI</h1>
+          <p id="appSub" class="text-xs text-blue-600 dark:text-blue-400 font-semibold">Smart Municipal Grievance Portal</p>
+        </div>
+      </div>
+
+      <!-- 5 Primary Citizen Navigation Tabs -->
+      <nav class="flex items-center gap-1.5 overflow-x-auto text-xs font-bold">
+        <button id="nav-tab-1" class="nav-tab-btn px-3 py-2 rounded-xl bg-blue-600 text-white shadow-sm flex items-center gap-1.5" onclick="switchTab(1)">
+          <span>🏠 Home</span>
+        </button>
+        <button id="nav-tab-2" class="nav-tab-btn px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 flex items-center gap-1.5" onclick="switchTab(2)">
+          <span>📝 Report a Problem</span>
+        </button>
+        <button id="nav-tab-3" class="nav-tab-btn px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 flex items-center gap-1.5" onclick="switchTab(3)">
+          <span>🔍 Track Complaint</span>
+        </button>
+        <button id="nav-tab-4" class="nav-tab-btn px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 flex items-center gap-1.5" onclick="switchTab(4)">
+          <span>📋 My Complaints</span>
+        </button>
+        <button id="nav-tab-5" class="nav-tab-btn px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 flex items-center gap-1.5" onclick="switchTab(5)">
+          <span>❓ Help & A11y</span>
+        </button>
+        <button id="nav-tab-dept" class="px-3 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 flex items-center gap-1.5 ml-2" onclick="switchTab('dept')">
+          <span>🏢 Dept Dashboard</span>
+        </button>
+      </nav>
+    </header>
+
+    <!-- TAB 1: HOME PAGE -->
+    <section id="panel-tab-1" class="tab-panel p-5 space-y-5">
+      <!-- Emergency Guidance Notice -->
+      <div class="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-xl text-xs text-amber-900 dark:text-amber-200 flex items-center gap-2">
+        <span class="text-xl">⚠️</span>
+        <div>
+          <strong>Emergency Guidance:</strong> This portal is dedicated to routine municipal civic infrastructure grievances. For immediate police, fire, or medical emergencies, please dial <strong>112</strong> immediately.
+        </div>
+      </div>
+
+      <!-- Hero Banner -->
+      <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-900 via-blue-700 to-indigo-800 text-white p-6 shadow-md">
+        <div class="max-w-2xl space-y-2">
+          <span class="px-2.5 py-0.5 rounded-full bg-white/20 text-white text-[11px] font-bold uppercase tracking-wider">Official Municipal Redressal</span>
+          <h2 id="heroHeading" class="text-2xl font-black leading-tight">Your Voice. Your Community. Better Cities.</h2>
+          <p id="heroSubtitle" class="text-sm text-blue-100 leading-relaxed">
+            Report civic problems directly to the right municipal department and track the progress from complaint to verified resolution.
+          </p>
+          <div class="pt-3 flex flex-wrap gap-2.5">
+            <button class="px-4 py-2.5 bg-white text-blue-800 hover:bg-slate-100 rounded-xl font-bold text-xs shadow flex items-center gap-2" onclick="switchTab(2)">
+              📢 Report a Problem
+            </button>
+            <button class="px-4 py-2.5 bg-blue-600/80 hover:bg-blue-600 border border-white/30 text-white rounded-xl font-bold text-xs flex items-center gap-2" onclick="switchTab(3)">
+              🔍 Track Complaint Status
+            </button>
+            <button class="px-4 py-2.5 bg-slate-900/60 hover:bg-slate-900 text-white rounded-xl font-bold text-xs flex items-center gap-2" onclick="switchTab('dept')">
+              🏢 Department Login
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Category Quick-Select Cards -->
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 id="catTitle" class="text-base font-extrabold text-[var(--foreground)]">Report by Problem Category</h3>
+          <span class="text-xs text-[var(--muted-foreground)]">Tap any category to launch the 5-step wizard</span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+          <div class="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:border-blue-500 hover:shadow-md transition cursor-pointer" onclick="startWizardWithCategory('potholes')">
+            <div class="text-3xl mb-1">🕳️</div>
+            <h4 class="font-bold text-xs text-[var(--foreground)]">Potholes</h4>
+            <p class="text-[10px] text-[var(--muted-foreground)] mt-0.5">Road craters & driving hazard</p>
+          </div>
+          <div class="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:border-blue-500 hover:shadow-md transition cursor-pointer" onclick="startWizardWithCategory('drainage')">
+            <div class="text-3xl mb-1">🌊</div>
+            <h4 class="font-bold text-xs text-[var(--foreground)]">Drainage Issues</h4>
+            <p class="text-[10px] text-[var(--muted-foreground)] mt-0.5">Clogged gutters & overflow</p>
+          </div>
+          <div class="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:border-blue-500 hover:shadow-md transition cursor-pointer" onclick="startWizardWithCategory('road_damage')">
+            <div class="text-3xl mb-1">🚧</div>
+            <h4 class="font-bold text-xs text-[var(--foreground)]">Road Damage</h4>
+            <p class="text-[10px] text-[var(--muted-foreground)] mt-0.5">Broken pavement & medians</p>
+          </div>
+          <div class="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:border-blue-500 hover:shadow-md transition cursor-pointer" onclick="startWizardWithCategory('streetlights')">
+            <div class="text-3xl mb-1">💡</div>
+            <h4 class="font-bold text-xs text-[var(--foreground)]">Streetlights</h4>
+            <p class="text-[10px] text-[var(--muted-foreground)] mt-0.5">Dark streets & burnt bulbs</p>
+          </div>
+          <div class="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:border-blue-500 hover:shadow-md transition cursor-pointer" onclick="startWizardWithCategory('garbage')">
+            <div class="text-3xl mb-1">🗑️</div>
+            <h4 class="font-bold text-xs text-[var(--foreground)]">Garbage & Waste</h4>
+            <p class="text-[10px] text-[var(--muted-foreground)] mt-0.5">Uncollected trash & dumps</p>
+          </div>
+          <div class="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:border-blue-500 hover:shadow-md transition cursor-pointer" onclick="startWizardWithCategory('water_supply')">
+            <div class="text-3xl mb-1">🚰</div>
+            <h4 class="font-bold text-xs text-[var(--foreground)]">Water Supply</h4>
+            <p class="text-[10px] text-[var(--muted-foreground)] mt-0.5">Pipeline bursts & muddy water</p>
+          </div>
+          <div class="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:border-blue-500 hover:shadow-md transition cursor-pointer" onclick="startWizardWithCategory('public_infrastructure')">
+            <div class="text-3xl mb-1">🌳</div>
+            <h4 class="font-bold text-xs text-[var(--foreground)]">Public Infra</h4>
+            <p class="text-[10px] text-[var(--muted-foreground)] mt-0.5">Damaged parks & civic benches</p>
+          </div>
+          <div class="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:border-blue-500 hover:shadow-md transition cursor-pointer" onclick="startWizardWithCategory('other')">
+            <div class="text-3xl mb-1">📋</div>
+            <h4 class="font-bold text-xs text-[var(--foreground)]">Other Problems</h4>
+            <p class="text-[10px] text-[var(--muted-foreground)] mt-0.5">Encroachment & general issues</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- How It Works 4-Step Cards -->
+      <div class="space-y-3">
+        <h3 class="text-base font-extrabold text-[var(--foreground)]">How CivicConnect Redressal Works</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+          <div class="p-3 bg-[var(--background)] border border-[var(--border)] rounded-xl space-y-1">
+            <span class="text-xl font-black text-blue-500">01</span>
+            <h5 class="font-bold text-[var(--foreground)]">Report with Ease</h5>
+            <p class="text-[var(--muted-foreground)]">Submit text, photo, live voice note, and location in 2 minutes.</p>
+          </div>
+          <div class="p-3 bg-[var(--background)] border border-[var(--border)] rounded-xl space-y-1">
+            <span class="text-xl font-black text-blue-500">02</span>
+            <h5 class="font-bold text-[var(--foreground)]">AI Smart Routing</h5>
+            <p class="text-[var(--muted-foreground)]">AI classifies the domain and routes directly to the department head.</p>
+          </div>
+          <div class="p-3 bg-[var(--background)] border border-[var(--border)] rounded-xl space-y-1">
+            <span class="text-xl font-black text-blue-500">03</span>
+            <h5 class="font-bold text-[var(--foreground)]">Real-Time Tracking</h5>
+            <p class="text-[var(--muted-foreground)]">Follow the 10-stage milestone timeline updated by field crews.</p>
+          </div>
+          <div class="p-3 bg-[var(--background)] border border-[var(--border)] rounded-xl space-y-1">
+            <span class="text-xl font-black text-blue-500">04</span>
+            <h5 class="font-bold text-[var(--foreground)]">Verified Resolution</h5>
+            <p class="text-[var(--muted-foreground)]">Confirm physical completion and submit 5-star citizen feedback.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Privacy Explanation Banner -->
+      <div class="p-4 bg-slate-50 dark:bg-slate-900 border border-[var(--border)] rounded-xl flex items-start gap-3 text-xs">
+        <span class="text-2xl">🔒</span>
+        <div class="space-y-0.5">
+          <strong class="text-blue-700 dark:text-blue-300 font-bold">Privacy by Design — Minimum Data Collection Guarantee</strong>
+          <p class="text-[var(--muted-foreground)]">
+            We only collect your registered mobile number and problem location to direct field workers. We never ask for Aadhaar numbers, residential documents, or background GPS location. All phone numbers are masked (<code class="text-blue-600">+91 98*** **210</code>) to prevent harassment.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: MULTI-STEP REPORTING WIZARD -->
+    <section id="panel-tab-2" class="tab-panel p-5 hidden space-y-5">
+      <div class="max-w-2xl mx-auto space-y-4">
+        
+        <!-- 5-Step Wizard Progress Header -->
+        <div class="bg-[var(--background)] p-3 rounded-xl border border-[var(--border)]">
+          <div class="flex items-center justify-between text-xs font-bold mb-2">
+            <span id="wizardStepTitle" class="text-blue-600">Step 1 of 5: Select Problem Category</span>
+            <span id="wizardStepPercent" class="text-[var(--muted-foreground)]">20% Complete</span>
+          </div>
+          <!-- Progress bar -->
+          <div class="h-2 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+            <div id="wizardBar" class="h-full bg-blue-600 rounded-full transition-all duration-300" style="width: 20%;"></div>
+          </div>
+          <!-- Step indicator badges -->
+          <div class="grid grid-cols-5 gap-1 mt-2 text-[10px] text-center text-[var(--muted-foreground)] font-semibold">
+            <span id="step-badge-1" class="text-blue-600 font-bold">1. Category</span>
+            <span id="step-badge-2">2. Describe</span>
+            <span id="step-badge-3">3. Evidence</span>
+            <span id="step-badge-4">4. Location</span>
+            <span id="step-badge-5">5. Review</span>
+          </div>
+        </div>
+
+        <!-- STEP 1: CATEGORY SELECTION -->
+        <div id="wstep-1" class="wizard-pane space-y-3">
+          <h3 class="font-bold text-sm text-[var(--foreground)]">Step 1: What is the nature of the municipal problem?</h3>
+          <p class="text-xs text-[var(--muted-foreground)]">Select the primary issue category:</p>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <button class="cat-choice-btn p-3 rounded-xl border-2 border-blue-600 bg-blue-50 dark:bg-blue-950/40 text-left space-y-1" onclick="selectWizardCat('potholes', this)">
+              <div class="text-2xl">🕳️</div>
+              <div class="font-bold text-xs text-[var(--foreground)]">Potholes</div>
+            </button>
+            <button class="cat-choice-btn p-3 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:border-blue-400 text-left space-y-1" onclick="selectWizardCat('drainage', this)">
+              <div class="text-2xl">🌊</div>
+              <div class="font-bold text-xs text-[var(--foreground)]">Drainage</div>
+            </button>
+            <button class="cat-choice-btn p-3 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:border-blue-400 text-left space-y-1" onclick="selectWizardCat('road_damage', this)">
+              <div class="text-2xl">🚧</div>
+              <div class="font-bold text-xs text-[var(--foreground)]">Road Damage</div>
+            </button>
+            <button class="cat-choice-btn p-3 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:border-blue-400 text-left space-y-1" onclick="selectWizardCat('streetlights', this)">
+              <div class="text-2xl">💡</div>
+              <div class="font-bold text-xs text-[var(--foreground)]">Streetlights</div>
+            </button>
+            <button class="cat-choice-btn p-3 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:border-blue-400 text-left space-y-1" onclick="selectWizardCat('garbage', this)">
+              <div class="text-2xl">🗑️</div>
+              <div class="font-bold text-xs text-[var(--foreground)]">Garbage</div>
+            </button>
+            <button class="cat-choice-btn p-3 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:border-blue-400 text-left space-y-1" onclick="selectWizardCat('water_supply', this)">
+              <div class="text-2xl">🚰</div>
+              <div class="font-bold text-xs text-[var(--foreground)]">Water Supply</div>
+            </button>
+            <button class="cat-choice-btn p-3 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:border-blue-400 text-left space-y-1" onclick="selectWizardCat('public_infrastructure', this)">
+              <div class="text-2xl">🌳</div>
+              <div class="font-bold text-xs text-[var(--foreground)]">Public Infra</div>
+            </button>
+            <button class="cat-choice-btn p-3 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:border-blue-400 text-left space-y-1" onclick="selectWizardCat('other', this)">
+              <div class="text-2xl">📋</div>
+              <div class="font-bold text-xs text-[var(--foreground)]">Other Issues</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- STEP 2: PROBLEM DESCRIPTION & VOICE -->
+        <div id="wstep-2" class="wizard-pane hidden space-y-3">
+          <h3 class="font-bold text-sm text-[var(--foreground)]">Step 2: Describe the issue in detail</h3>
+          <p class="text-xs text-[var(--muted-foreground)]">Type your grievance or speak in Telugu, Hindi, Marathi, or English:</p>
+
+          <!-- Live AI Assistant Classification Card -->
+          <div id="wizardAiBox" class="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 rounded-xl text-xs space-y-1">
+            <div class="flex items-center justify-between font-bold text-emerald-800 dark:text-emerald-300">
+              <span class="flex items-center gap-1.5">🤖 AI Classification Engine Active</span>
+              <span id="wAiConf" class="bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-100 px-2 py-0.5 rounded text-[10px]">96% Confidence</span>
+            </div>
+            <div class="text-[11px] text-emerald-900 dark:text-emerald-200 grid grid-cols-2 gap-1 pt-1">
+              <div>Detected Domain: <strong id="wAiCat">Road Damage / Pothole</strong></div>
+              <div>Responsible Department: <strong id="wAiDept">Roads & Infrastructure</strong></div>
+              <div>Urgency Priority: <strong id="wAiPriority" class="text-amber-700 dark:text-amber-300">HIGH</strong></div>
+              <div>Safety Hazard: <span id="wAiHazard" class="text-red-600 font-semibold">School Zone Corridor</span></div>
+            </div>
+          </div>
+
+          <div class="space-y-1">
+            <label class="block text-xs font-semibold text-[var(--foreground)]">Description Text</label>
+            <textarea id="wizardDescInput" rows="3" class="w-full text-xs p-2.5 rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Provide problem location context and severity..." oninput="onWizardDescChange(this.value)">Large deep pothole on Main Road outside primary school causing two-wheeler skids.</textarea>
+          </div>
+
+          <!-- Quick Samples for Hackathon Demonstration -->
+          <div class="flex items-center gap-1.5 text-[11px] text-[var(--muted-foreground)]">
+            <span>Quick Samples:</span>
+            <button class="text-blue-600 underline font-semibold" onclick="setWizardSample('pothole')">Pothole near school</button>
+            <button class="text-blue-600 underline font-semibold" onclick="setWizardSample('light')">Broken streetlight</button>
+            <button class="text-blue-600 underline font-semibold" onclick="setWizardSample('drain')">Clogged drain overflow</button>
+          </div>
+
+          <!-- Voice Recording Feature -->
+          <div class="p-3 bg-slate-50 dark:bg-slate-900 border border-dashed border-[var(--border)] rounded-xl flex items-center justify-between gap-3">
+            <div class="space-y-0.5">
+              <strong class="text-xs text-[var(--foreground)] flex items-center gap-1.5">
+                <span>🎙️ Voice Message Memo</span>
+                <span class="text-[10px] text-blue-600 font-normal">(Elderly & low-literacy friendly)</span>
+              </strong>
+              <p class="text-[11px] text-[var(--muted-foreground)]" id="wizardVoiceStatus">Press button to record your voice complaint.</p>
+            </div>
+            <button id="btnWizardRecord" class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow" onclick="toggleWizardVoice()">
+              <span class="w-2 h-2 rounded-full bg-white pulse-dot"></span>
+              <span id="btnWizardRecordTxt">Record Voice</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- STEP 3: UPLOAD EVIDENCE -->
+        <div id="wstep-3" class="wizard-pane hidden space-y-3">
+          <h3 class="font-bold text-sm text-[var(--foreground)]">Step 3: Upload Photos or Video Evidence</h3>
+          <p class="text-xs text-[var(--muted-foreground)]">Visual evidence allows the department head to inspect the spot before dispatching crew:</p>
+
+          <div class="p-6 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl bg-[var(--background)] text-center space-y-2 cursor-pointer hover:border-blue-500 transition" onclick="toggleSampleUpload()">
+            <div class="text-4xl">📸</div>
+            <strong class="text-xs text-blue-600 font-bold block">Click to attach photo or video</strong>
+            <span class="text-[11px] text-[var(--muted-foreground)] block">Supported: JPG, PNG, MP4 up to 10MB</span>
+          </div>
+
+          <!-- Uploaded Preview Thumbnails -->
+          <div class="space-y-1.5">
+            <div class="text-xs font-semibold text-[var(--foreground)]">Attached Evidence (1 file):</div>
+            <div class="flex items-center gap-2">
+              <div class="relative w-24 h-24 rounded-xl overflow-hidden border border-[var(--border)] shadow-sm">
+                <img src="https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&w=300&q=80" alt="Pothole" class="w-full h-full object-cover" />
+                <span class="absolute bottom-1 right-1 bg-black/70 text-white text-[9px] px-1 rounded">Photo</span>
+              </div>
+              <div class="text-xs text-[var(--muted-foreground)] space-y-0.5">
+                <div class="font-bold text-[var(--foreground)]">pothole_evidence_main_road.jpg</div>
+                <div>Size: 1.4 MB &bull; Uploaded ✓</div>
+                <div class="text-emerald-600 font-semibold text-[10px]">Verified clear resolution</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 4: LOCATION & INTERACTIVE PIN MAP -->
+        <div id="wstep-4" class="wizard-pane hidden space-y-3">
+          <h3 class="font-bold text-sm text-[var(--foreground)]">Step 4: Pinpoint Issue Location</h3>
+          <p class="text-xs text-[var(--muted-foreground)]">Share your device GPS or select your ward so field teams know the exact address:</p>
+
+          <div class="flex gap-2">
+            <button class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5" onclick="alert('GPS Location Acquired: 17.3850° N, 78.4867° E (Ward 4 - Gram Panchayat Road)')">
+              📍 Use Device GPS Location
+            </button>
+            <span class="text-xs text-emerald-600 font-bold flex items-center">✓ GPS Coordinates Synced</span>
+          </div>
+
+          <!-- Interactive Canvas Map -->
+          <div class="rounded-xl border border-[var(--border)] overflow-hidden bg-slate-200 dark:bg-slate-800 p-3 text-center space-y-1">
+            <div class="h-32 bg-slate-300 dark:bg-slate-700 rounded-lg flex items-center justify-center text-xs text-slate-600 dark:text-slate-300 font-bold border border-dashed border-slate-400">
+              🗺️ Interactive Pin Drop Map &bull; Drag to refine: 17.3850° N, 78.4867° E
+            </div>
+            <div class="text-[11px] text-[var(--muted-foreground)]">Ward 4 Center &bull; Near Govt High School, Main Gram Panchayat Road</div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div>
+              <label class="block font-semibold mb-1 text-[var(--foreground)]">Municipal Ward</label>
+              <select class="w-full p-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-[var(--foreground)]">
+                <option selected>Ward 4 - Gram Panchayat & Village Center</option>
+                <option>Ward 1 - North Zone / Sector 3</option>
+                <option>Ward 2 - Railway Station & Bus Terminal</option>
+                <option>Ward 3 - Children Park & Residential</option>
+                <option>Ward 5 - Commercial Bazaar & Market</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-semibold mb-1 text-[var(--foreground)]">Nearby Landmark</label>
+              <input type="text" class="w-full p-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-[var(--foreground)]" value="Opposite Govt High School, Bus Shelter #3" />
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 5: REVIEW, AI ROUTING & SUBMIT -->
+        <div id="wstep-5" class="wizard-pane hidden space-y-3">
+          <h3 class="font-bold text-sm text-[var(--foreground)]">Step 5: Review & Submit Grievance</h3>
+          <p class="text-xs text-[var(--muted-foreground)]">Please verify your details. A unique tracking ID will be generated upon submission:</p>
+
+          <!-- Duplicate Complaint Check Notice -->
+          <div class="p-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-xl text-xs text-amber-900 dark:text-amber-200">
+            <strong>⚠️ Spatial Duplicate Check:</strong> No active duplicate issues found in Ward 4 within 300m in the last 48 hours. This is recorded as a new primary grievance.
+          </div>
+
+          <!-- Summary Breakdown Card -->
+          <div class="p-3.5 bg-[var(--background)] border border-[var(--border)] rounded-xl text-xs space-y-2">
+            <div class="grid grid-cols-2 gap-2">
+              <div>Category: <strong id="sumCat" class="text-blue-600">Road Damage / Potholes</strong></div>
+              <div>Routing To: <strong id="sumDept" class="text-blue-600">Roads & Infrastructure</strong></div>
+              <div>Location: <strong>Ward 4 &bull; Near Govt High School</strong></div>
+              <div>Urgency Priority: <span class="bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-bold">HIGH</span></div>
+            </div>
+            <div class="pt-1 border-t border-[var(--border)]">
+              <span class="text-[var(--muted-foreground)]">Description:</span>
+              <p id="sumDesc" class="font-medium text-[var(--foreground)] mt-0.5">Large deep pothole on Main Road outside primary school causing two-wheeler skids.</p>
+            </div>
+          </div>
+
+          <!-- Privacy Consent -->
+          <div class="p-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl text-[11px] text-[var(--muted-foreground)] flex items-start gap-2">
+            <input type="checkbox" id="wConsent" checked class="mt-0.5" />
+            <label for="wConsent">
+              I certify that this complaint represents an authentic municipal issue. I understand my phone number (<code class="text-blue-600">+91 98*** **210</code>) is masked from public view and only accessible to authorized field engineers.
+            </label>
+          </div>
+        </div>
+
+        <!-- Wizard Navigation Footer Buttons -->
+        <div class="flex items-center justify-between pt-3 border-t border-[var(--border)]">
+          <button id="btnWPrev" class="px-4 py-2 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold hidden" onclick="prevWizardStep()">
+            ← Previous Step
+          </button>
+          <div class="ml-auto flex items-center gap-2">
+            <button id="btnWNext" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow" onclick="nextWizardStep()">
+              Next Step →
+            </button>
+            <button id="btnWSubmit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow hidden" onclick="submitWizard()">
+              ✅ Generate Complaint ID & Submit
+            </button>
+          </div>
+        </div>
+
+        <!-- Submission Success Banner -->
+        <div id="wizardSuccessCard" class="hidden p-4 bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-400 text-emerald-950 dark:text-emerald-100 rounded-2xl text-center space-y-2">
+          <div class="text-3xl">🎉</div>
+          <h4 class="font-extrabold text-sm">Complaint Registered Successfully!</h4>
+          <p class="text-xs">Your unique tracking ID is:</p>
+          <div class="text-xl font-mono font-black text-blue-700 dark:text-blue-300 tracking-wider">CC-2026-000106</div>
+          <div class="pt-2 flex justify-center gap-2 text-xs">
+            <button class="px-3 py-1.5 bg-blue-600 text-white rounded-lg font-bold" onclick="trackNewComplaint('CC-2026-000106')">Track Status Now</button>
+            <button class="px-3 py-1.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-white rounded-lg font-bold border border-slate-300" onclick="switchTab(4)">View in My Complaints</button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TAB 3: TRACK COMPLAINT (10-STAGE TIMELINE) -->
+    <section id="panel-tab-3" class="tab-panel p-5 hidden space-y-5">
+      <div class="max-w-3xl mx-auto space-y-4">
+        
+        <!-- Search bar -->
+        <div class="p-3.5 bg-[var(--background)] border border-[var(--border)] rounded-xl flex flex-wrap items-center justify-between gap-2.5">
+          <div class="space-y-0.5 flex-1 min-w-[200px]">
+            <label class="block text-xs font-bold text-[var(--foreground)]">Enter Complaint ID</label>
+            <input type="text" id="trackInput" class="w-full text-xs p-2 rounded-lg border border-[var(--border)] bg-[var(--card)] font-mono font-bold uppercase text-[var(--foreground)]" value="CC-2026-000101" />
+          </div>
+          <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow self-end" onclick="searchComplaintTrack()">
+            🔍 Track Milestone Timeline
+          </button>
+        </div>
+
+        <!-- Complaint Info Header -->
+        <div class="p-4 bg-[var(--background)] border border-[var(--border)] rounded-2xl space-y-3">
+          <div class="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <span id="trackStatusBadge" class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">Work in Progress</span>
+              <h3 id="trackComplaintIdTitle" class="text-lg font-black text-[var(--foreground)] mt-1">CC-2026-000101 &bull; Broken Streetlight</h3>
+              <p id="trackMeta" class="text-xs text-[var(--muted-foreground)]">Ward 4 &bull; Electricity & Streetlighting Department &bull; Submitted 18 Sep 2026</p>
+            </div>
+            <div class="text-right">
+              <div id="trackProgressPercent" class="text-2xl font-black text-emerald-600 dark:text-emerald-400">50%</div>
+              <div class="text-[10px] text-[var(--muted-foreground)]">Completion Progress</div>
+            </div>
+          </div>
+
+          <!-- Progress Bar -->
+          <div class="h-3 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+            <div id="trackProgressBar" class="h-full bg-gradient-to-r from-blue-600 to-emerald-500 rounded-full" style="width: 50%;"></div>
+          </div>
+
+          <!-- Transparency Notice -->
+          <div class="text-[10px] text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 p-2 rounded-lg border border-amber-200 dark:border-amber-900">
+            ℹ️ <strong>Transparency Note:</strong> Progress percentages are official updates posted by the responsible department head and may not represent independently verified measurements.
+          </div>
+        </div>
+
+        <!-- 10-Stage Milestone Progress Timeline -->
+        <div class="space-y-2">
+          <h4 class="text-xs font-black text-[var(--foreground)] uppercase tracking-wider">Official 10-Stage Redressal Timeline:</h4>
+          
+          <div class="space-y-2">
+            <!-- Stage 1 -->
+            <div class="p-2.5 rounded-xl border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 text-xs flex items-start gap-2.5">
+              <span class="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs flex-shrink-0">✓</span>
+              <div class="flex-1">
+                <div class="flex items-center justify-between">
+                  <strong class="text-emerald-900 dark:text-emerald-200">1. Complaint Received</strong>
+                  <span class="text-[10px] text-slate-500">18 Sep, 10:30 AM</span>
+                </div>
+                <p class="text-[11px] text-slate-600 dark:text-slate-300 mt-0.5">Complaint logged into municipal gateway and assigned to Ward 4 desk.</p>
+              </div>
+            </div>
+
+            <!-- Stage 2 -->
+            <div class="p-2.5 rounded-xl border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 text-xs flex items-start gap-2.5">
+              <span class="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs flex-shrink-0">✓</span>
+              <div class="flex-1">
+                <div class="flex items-center justify-between">
+                  <strong class="text-emerald-900 dark:text-emerald-200">2. Complaint Verified</strong>
+                  <span class="text-[10px] text-slate-500">18 Sep, 04:00 PM</span>
+                </div>
+                <p class="text-[11px] text-slate-600 dark:text-slate-300 mt-0.5">Verified on site by Electrical Ward Inspector. Priority set to HIGH due to night pedestrian traffic.</p>
+              </div>
+            </div>
+
+            <!-- Stage 3 -->
+            <div class="p-2.5 rounded-xl border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 text-xs flex items-start gap-2.5">
+              <span class="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs flex-shrink-0">✓</span>
+              <div class="flex-1">
+                <div class="flex items-center justify-between">
+                  <strong class="text-emerald-900 dark:text-emerald-200">3. Assigned to Department Staff</strong>
+                  <span class="text-[10px] text-slate-500">19 Sep, 09:30 AM</span>
+                </div>
+                <p class="text-[11px] text-slate-600 dark:text-slate-300 mt-0.5">Work order #EL-89 assigned to Manoj Deshmukh (Line Supervisor).</p>
+              </div>
+            </div>
+
+            <!-- Stage 4 -->
+            <div class="p-2.5 rounded-xl border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 text-xs flex items-start gap-2.5">
+              <span class="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs flex-shrink-0">✓</span>
+              <div class="flex-1">
+                <div class="flex items-center justify-between">
+                  <strong class="text-emerald-900 dark:text-emerald-200">4. Work Started</strong>
+                  <span class="text-[10px] text-slate-500">19 Sep, 02:00 PM</span>
+                </div>
+                <p class="text-[11px] text-slate-600 dark:text-slate-300 mt-0.5">Field crew inspected circuit; replacement LED driver and cable required.</p>
+              </div>
+            </div>
+
+            <!-- Stage 5 -->
+            <div class="p-2.5 rounded-xl border-2 border-blue-600 bg-blue-50 dark:bg-blue-950/50 text-xs flex items-start gap-2.5">
+              <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs flex-shrink-0 pulse-dot">●</span>
+              <div class="flex-1">
+                <div class="flex items-center justify-between">
+                  <strong class="text-blue-900 dark:text-blue-200">5. Work in Progress (50% Completed Milestone)</strong>
+                  <span class="text-[10px] text-blue-600 font-bold">Active Phase</span>
+                </div>
+                <p class="text-[11px] text-blue-900 dark:text-blue-300 mt-0.5">"Replacement hardware collected from central depot. Installation scheduled for tomorrow morning."</p>
+                <div class="text-[10px] text-slate-500 mt-1">Updated by: Sunita Patel (Electrical Dept Head)</div>
+              </div>
+            </div>
+
+            <!-- Stage 6 to 10 (Upcoming) -->
+            <div class="p-2.5 rounded-xl border border-[var(--border)] bg-[var(--background)] text-xs flex items-start gap-2.5 opacity-70">
+              <span class="w-6 h-6 rounded-full bg-slate-300 dark:bg-slate-700 text-slate-600 flex items-center justify-center font-bold text-xs flex-shrink-0">6</span>
+              <div>
+                <strong class="text-[var(--foreground)]">6. 75% Completed (Testing & Ground Verification)</strong>
+                <p class="text-[11px] text-[var(--muted-foreground)]">Scheduled after physical fixture installation.</p>
+              </div>
+            </div>
+
+            <div class="p-2.5 rounded-xl border border-[var(--border)] bg-[var(--background)] text-xs flex items-start gap-2.5 opacity-70">
+              <span class="w-6 h-6 rounded-full bg-slate-300 dark:bg-slate-700 text-slate-600 flex items-center justify-center font-bold text-xs flex-shrink-0">7</span>
+              <div>
+                <strong class="text-[var(--foreground)]">7. Resolved</strong>
+                <p class="text-[11px] text-[var(--muted-foreground)]">Physical work certified complete on site.</p>
+              </div>
+            </div>
+
+            <div class="p-2.5 rounded-xl border border-[var(--border)] bg-[var(--background)] text-xs flex items-start gap-2.5 opacity-70">
+              <span class="w-6 h-6 rounded-full bg-slate-300 dark:bg-slate-700 text-slate-600 flex items-center justify-center font-bold text-xs flex-shrink-0">8</span>
+              <div>
+                <strong class="text-[var(--foreground)]">8. Citizen Feedback & Closure Rating</strong>
+                <p class="text-[11px] text-[var(--muted-foreground)]">Citizen validates satisfaction with star rating.</p>
+              </div>
+            </div>
+
+            <div class="p-2.5 rounded-xl border border-[var(--border)] bg-[var(--background)] text-xs flex items-start gap-2.5 opacity-70">
+              <span class="w-6 h-6 rounded-full bg-slate-300 dark:bg-slate-700 text-slate-600 flex items-center justify-center font-bold text-xs flex-shrink-0">9</span>
+              <div>
+                <strong class="text-[var(--foreground)]">9. Closed</strong>
+                <p class="text-[11px] text-[var(--muted-foreground)]">Official administrative archival in municipal records.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TAB 4: MY COMPLAINTS -->
+    <section id="panel-tab-4" class="tab-panel p-5 hidden space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-extrabold text-[var(--foreground)]">My Submitted Grievances</h3>
+          <p class="text-xs text-[var(--muted-foreground)]">Track history, chat directly with municipal officers, and submit resolution ratings</p>
+        </div>
+        <button class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow" onclick="switchTab(2)">
+          + Report New Issue
+        </button>
+      </div>
+
+      <!-- Complaint Cards List -->
+      <div class="space-y-3">
+        <!-- Card 1 -->
+        <div class="p-4 rounded-xl border border-[var(--border)] bg-[var(--background)] shadow-sm space-y-2.5">
+          <div class="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">Work in Progress</span>
+              <h4 class="text-sm font-extrabold text-[var(--foreground)] mt-0.5">CC-2026-000101 &bull; 💡 Broken Streetlight</h4>
+              <p class="text-xs text-[var(--muted-foreground)]">Ward 4 &bull; Main Gram Panchayat Road &bull; 18 Sep 2026</p>
+            </div>
+            <div class="text-right">
+              <span class="text-base font-black text-amber-600">50%</span>
+              <div class="text-[10px] text-[var(--muted-foreground)]">Progress</div>
+            </div>
+          </div>
+          <p class="text-xs text-slate-700 dark:text-slate-300">Streetlight pole #42 outside Community Hall has been flickering and completely dark for 3 days.</p>
+          <div class="h-2 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+            <div class="h-full bg-amber-500 rounded-full" style="width: 50%;"></div>
+          </div>
+          <div class="flex items-center justify-between pt-1 text-xs">
+            <span class="text-[11px] text-[var(--muted-foreground)]">Assigned: Manoj Deshmukh (Inspector)</span>
+            <div class="flex items-center gap-2">
+              <button class="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 border border-[var(--border)] rounded text-xs font-semibold" onclick="openChat('CC-2026-000101')">💬 Chat (2 msgs)</button>
+              <button class="px-2.5 py-1 bg-blue-600 text-white rounded text-xs font-semibold" onclick="trackNewComplaint('CC-2026-000101')">📍 Timeline</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="p-4 rounded-xl border border-[var(--border)] bg-[var(--background)] shadow-sm space-y-2.5">
+          <div class="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold">Verified</span>
+              <h4 class="text-sm font-extrabold text-[var(--foreground)] mt-0.5">CC-2026-000102 &bull; 🚧 Deep Road Pothole</h4>
+              <p class="text-xs text-[var(--muted-foreground)]">Ward 2 &bull; Station Road Junction &bull; 19 Sep 2026</p>
+            </div>
+            <div class="text-right">
+              <span class="text-base font-black text-blue-600">15%</span>
+              <div class="text-[10px] text-[var(--muted-foreground)]">Progress</div>
+            </div>
+          </div>
+          <p class="text-xs text-slate-700 dark:text-slate-300">Massive pothole (depth 15cm) on bus corridor causing two-wheeler accidents.</p>
+          <div class="h-2 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+            <div class="h-full bg-blue-600 rounded-full" style="width: 15%;"></div>
+          </div>
+          <div class="flex items-center justify-between pt-1 text-xs">
+            <span class="text-[11px] text-[var(--muted-foreground)]">Assigned: Er. Rajesh Kumar</span>
+            <div class="flex items-center gap-2">
+              <button class="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 border border-[var(--border)] rounded text-xs font-semibold" onclick="openChat('CC-2026-000102')">💬 Chat</button>
+              <button class="px-2.5 py-1 bg-blue-600 text-white rounded text-xs font-semibold" onclick="trackNewComplaint('CC-2026-000102')">📍 Timeline</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3 (Resolved) -->
+        <div class="p-4 rounded-xl border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 shadow-sm space-y-2.5">
+          <div class="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">Resolved & Closed</span>
+              <h4 class="text-sm font-extrabold text-[var(--foreground)] mt-0.5">CC-2026-000104 &bull; 🗑️ Garbage Dump Cleared</h4>
+              <p class="text-xs text-[var(--muted-foreground)]">Ward 3 &bull; Nehru Children Park &bull; Resolved 21 Sep 2026</p>
+            </div>
+            <div class="text-right">
+              <span class="text-base font-black text-emerald-600">100%</span>
+              <div class="text-[10px] text-amber-500 font-bold">★★★★★ (5/5)</div>
+            </div>
+          </div>
+          <p class="text-xs text-slate-700 dark:text-slate-300">"Waste cleared; bleaching powder disinfected across perimeter. Citizen confirmed closure."</p>
+          <div class="flex items-center justify-between pt-1 text-xs">
+            <span class="text-[11px] text-emerald-700 dark:text-emerald-300 font-semibold">✓ Citizen resolution verified</span>
+            <button class="px-2.5 py-1 bg-emerald-600 text-white rounded text-xs font-semibold" onclick="alert('Viewing closure certificate & proof photo for CC-2026-000104')">View Proof Photo</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: HELP & ACCESSIBILITY CENTER -->
+    <section id="panel-tab-5" class="tab-panel p-5 hidden space-y-5">
+      <div class="max-w-3xl mx-auto space-y-5">
+        <div>
+          <h3 class="text-base font-extrabold text-[var(--foreground)]">Elderly & Universal Accessibility Center</h3>
+          <p class="text-xs text-[var(--muted-foreground)]">Simple controls designed for senior citizens, children, and rural/urban citizens of all literacy levels.</p>
+        </div>
+
+        <!-- 4 Accessibility Mode Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+          <div class="p-3.5 bg-[var(--background)] border border-[var(--border)] rounded-xl space-y-2">
+            <div class="text-2xl">🔍</div>
+            <strong class="block text-[var(--foreground)] font-bold">Large Text Mode</strong>
+            <p class="text-[11px] text-[var(--muted-foreground)]">Increases font sizes, icons, and button targets by 120%.</p>
+            <button class="w-full py-1 bg-blue-600 text-white rounded font-semibold text-xs" onclick="toggleLargeText()">Toggle Size</button>
+          </div>
+          <div class="p-3.5 bg-[var(--background)] border border-[var(--border)] rounded-xl space-y-2">
+            <div class="text-2xl">🌓</div>
+            <strong class="block text-[var(--foreground)] font-bold">High Contrast</strong>
+            <p class="text-[11px] text-[var(--muted-foreground)]">WCAG AAA compliant pure black & yellow palette.</p>
+            <button class="w-full py-1 bg-slate-900 text-yellow-400 rounded font-semibold text-xs border border-yellow-400" onclick="toggleHighContrast()">Toggle Contrast</button>
+          </div>
+          <div class="p-3.5 bg-[var(--background)] border border-[var(--border)] rounded-xl space-y-2">
+            <div class="text-2xl">🔊</div>
+            <strong class="block text-[var(--foreground)] font-bold">Audio Guide</strong>
+            <p class="text-[11px] text-[var(--muted-foreground)]">Voice instructions read aloud form steps in regional languages.</p>
+            <button class="w-full py-1 bg-emerald-600 text-white rounded font-semibold text-xs" onclick="speakHelp()">Listen Guide</button>
+          </div>
+          <div class="p-3.5 bg-[var(--background)] border border-[var(--border)] rounded-xl space-y-2">
+            <div class="text-2xl">🌐</div>
+            <strong class="block text-[var(--foreground)] font-bold">Multilingual</strong>
+            <p class="text-[11px] text-[var(--muted-foreground)]">Full support for English, Telugu, Hindi, and Marathi.</p>
+            <select class="w-full py-1 px-1 bg-[var(--card)] border border-[var(--border)] rounded text-xs" onchange="changeLanguage(this.value)">
+              <option value="en">English</option>
+              <option value="te">తెలుగు</option>
+              <option value="hi">हिन्दी</option>
+              <option value="mr">मराठी</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 5-Step Visual Walkthrough for Senior Citizens -->
+        <div class="p-4 bg-[var(--background)] border border-[var(--border)] rounded-2xl space-y-2.5">
+          <h4 class="text-xs font-black uppercase tracking-wider text-[var(--foreground)]">Simple 5-Step Instruction Guide for Reporting:</h4>
+          <ol class="space-y-1.5 text-xs text-slate-700 dark:text-slate-300 list-decimal pl-4">
+            <li><strong>Step 1:</strong> Tap on the large blue button labeled <em>"Report a Problem"</em>.</li>
+            <li><strong>Step 2:</strong> Select the icon that matches your issue (Potholes, Streetlights, Garbage, or Water).</li>
+            <li><strong>Step 3:</strong> Speak into your phone by pressing the red microphone button or type a short message.</li>
+            <li><strong>Step 4:</strong> Click <em>"Use Device GPS Location"</em> so the repair team knows where to go.</li>
+            <li><strong>Step 5:</strong> Write down your <strong>Complaint ID (starting with CC-2026)</strong> to track progress anytime!</li>
+          </ol>
+        </div>
+
+        <!-- Municipal Helplines -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div class="p-3 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 rounded-xl space-y-1">
+            <span class="text-blue-700 dark:text-blue-300 font-bold">Toll-Free Grievance Helpline</span>
+            <div class="text-lg font-black text-blue-900 dark:text-blue-100">1800-425-1999</div>
+            <span class="text-[10px] text-blue-600">8:00 AM - 8:00 PM (All Days)</span>
+          </div>
+          <div class="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 rounded-xl space-y-1">
+            <span class="text-emerald-700 dark:text-emerald-300 font-bold">WhatsApp Grievance Bot</span>
+            <div class="text-lg font-black text-emerald-900 dark:text-emerald-100">+91 94400 22000</div>
+            <span class="text-[10px] text-emerald-600">Instant registration via chat</span>
+          </div>
+          <div class="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-xl space-y-1">
+            <span class="text-red-700 dark:text-red-300 font-bold">Immediate Emergencies</span>
+            <div class="text-lg font-black text-red-900 dark:text-red-100">112</div>
+            <span class="text-[10px] text-red-600">Police, Fire & Ambulance</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- EXTRA TAB: DEPARTMENT HEAD DASHBOARD (OFFICIAL RBAC) -->
+    <section id="panel-tab-dept" class="tab-panel p-5 hidden space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] pb-3">
+        <div>
+          <span class="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-bold uppercase tracking-wider">Official Municipal Console</span>
+          <h3 id="deptConsoleTitle" class="text-base font-extrabold text-[var(--foreground)] mt-0.5">Electricity & Streetlighting Department</h3>
+          <p class="text-xs text-[var(--muted-foreground)]">Role-based queue: Showing complaints routed exclusively to Electrical Division</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <select id="deptSelect" class="text-xs p-1.5 bg-[var(--card)] border border-[var(--border)] rounded-lg font-bold text-[var(--foreground)]" onchange="switchDeptConsole(this.value)">
+            <option value="elec" selected>💡 Electrical Dept Head (Sunita Patel)</option>
+            <option value="roads">🛣️ Roads Dept Head (Er. Rajesh Kumar)</option>
+            <option value="swm">🗑️ Sanitation Dept Head (Meena Sharma)</option>
+            <option value="drain">🌊 Drainage Dept Head (K. Venkat Rao)</option>
+            <option value="admin">⭐ Municipal Commissioner (All Depts)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-center text-xs">
+        <div class="p-2.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 rounded-xl">
+          <span class="text-[10px] text-blue-700 uppercase font-bold">Total Assigned</span>
+          <div class="text-xl font-black text-blue-900 dark:text-blue-100">18</div>
+        </div>
+        <div class="p-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 rounded-xl">
+          <span class="text-[10px] text-amber-700 uppercase font-bold">Under Review</span>
+          <div class="text-xl font-black text-amber-900 dark:text-amber-100">4</div>
+        </div>
+        <div class="p-2.5 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 rounded-xl">
+          <span class="text-[10px] text-indigo-700 uppercase font-bold">In Progress</span>
+          <div class="text-xl font-black text-indigo-900 dark:text-indigo-100">6</div>
+        </div>
+        <div class="p-2.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 rounded-xl">
+          <span class="text-[10px] text-emerald-700 uppercase font-bold">Resolved</span>
+          <div class="text-xl font-black text-emerald-900 dark:text-emerald-100">8</div>
+        </div>
+        <div class="p-2.5 bg-red-50 dark:bg-red-950/40 border border-red-200 rounded-xl">
+          <span class="text-[10px] text-red-700 uppercase font-bold">High Priority</span>
+          <div class="text-xl font-black text-red-900 dark:text-red-100">2</div>
+        </div>
+      </div>
+
+      <!-- Department Complaint Action Controller -->
+      <div class="p-4 bg-[var(--background)] border border-[var(--border)] rounded-2xl space-y-3 text-xs">
+        <div class="flex items-center justify-between">
+          <strong class="text-sm text-[var(--foreground)]">Manage Work Order: <span class="text-blue-600 font-mono">CC-2026-000101</span></strong>
+          <span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded text-[10px]">Priority: HIGH</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block font-semibold mb-1 text-[var(--foreground)]">Assign Municipal Staff</label>
+            <select class="w-full p-2 rounded-lg border border-[var(--border)] bg-[var(--card)] text-[var(--foreground)]">
+              <option selected>Manoj Deshmukh (Line Supervisor - Ward 4)</option>
+              <option>Sunita Patel (Senior Electrical Inspector)</option>
+              <option>Suresh Rao (Field Technician)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold mb-1 text-[var(--foreground)]">Update Work Progress</label>
+            <div class="flex items-center gap-2 pt-1">
+              <input type="range" min="0" max="100" step="25" value="50" class="flex-1" oninput="document.getElementById('sliderVal').textContent = this.value + '%'" />
+              <span id="sliderVal" class="font-bold text-emerald-600 text-sm w-12">50%</span>
+            </div>
+          </div>
+          <div class="flex items-end">
+            <button class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow text-xs" onclick="alert('Progress updated to 75%! Automatic status update notification dispatched to citizen.')">
+              💾 Update Status & Notify
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold mb-1 text-[var(--foreground)]">Official Progress Note</label>
+          <input type="text" class="w-full p-2 rounded-lg border border-[var(--border)] bg-[var(--card)] text-[var(--foreground)]" value="Replacement LED fixture & fuse collected from depot. Installation underway." />
+        </div>
+      </div>
+    </section>
+
+    <!-- Two-Way Chat Modal -->
+    <div id="chatModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 z-50">
+      <div class="bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)] rounded-2xl max-w-md w-full p-4 space-y-3 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-[var(--border)] pb-2">
+          <div>
+            <h4 class="font-bold text-xs" id="chatTitle">Direct Complaint Chat: CC-2026-000101</h4>
+            <span class="text-[10px] text-blue-600">Citizen &bull; Department Head Channel</span>
+          </div>
+          <button class="text-slate-400 hover:text-slate-600 font-bold text-sm" onclick="closeChat()">✕</button>
+        </div>
+
+        <!-- Chat history -->
+        <div id="chatHistory" class="space-y-2 max-h-48 overflow-y-auto text-xs p-1">
+          <div class="p-2 rounded-lg bg-blue-100 dark:bg-blue-950 text-blue-950 dark:text-blue-100 ml-6 text-right">
+            <div class="text-[9px] text-blue-600">Citizen &bull; 18 Sep, 11:00 AM</div>
+            Please repair this soon, children return home from evening school in the dark.
+          </div>
+          <div class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-[var(--foreground)] mr-6">
+            <div class="text-[9px] text-slate-500 font-bold">Sunita Patel (Electrical Dept) &bull; 20 Sep, 03:00 PM</div>
+            Hello, our inspector checked the pole. A new LED driver will be installed by tomorrow.
+          </div>
+        </div>
+
+        <div class="flex gap-2">
+          <input type="text" id="chatMsgInput" class="flex-1 text-xs p-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-[var(--foreground)]" placeholder="Type a message to department..." onkeydown="if(event.key==='Enter') sendChatMsg()" />
+          <button class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold" onclick="sendChatMsg()">Send</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Role Switcher Modal -->
+    <div id="roleModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 z-50">
+      <div class="bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)] rounded-2xl max-w-md w-full p-4 space-y-3 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-[var(--border)] pb-2">
+          <h4 class="font-bold text-xs">Switch User Persona</h4>
+          <button class="text-slate-400 font-bold text-sm" onclick="document.getElementById('roleModal').classList.add('hidden')">✕</button>
+        </div>
+        <div class="space-y-2 text-xs">
+          <button class="w-full p-2.5 rounded-xl border border-[var(--border)] hover:border-blue-500 text-left space-y-0.5" onclick="selectRole('citizen')">
+            <div class="font-bold text-blue-600">👤 Citizen Persona (Ananya Devi)</div>
+            <div class="text-[10px] text-[var(--muted-foreground)]">Phone: +91 98*** **210 &bull; Can report, track, and chat</div>
+          </button>
+          <button class="w-full p-2.5 rounded-xl border border-[var(--border)] hover:border-blue-500 text-left space-y-0.5" onclick="selectRole('dept')">
+            <div class="font-bold text-indigo-600">🏢 Electrical Dept Head (Sunita Patel)</div>
+            <div class="text-[10px] text-[var(--muted-foreground)]">Role-based view limited to Streetlights and electrical grid</div>
+          </button>
+          <button class="w-full p-2.5 rounded-xl border border-[var(--border)] hover:border-blue-500 text-left space-y-0.5" onclick="selectRole('roads')">
+            <div class="font-bold text-amber-600">🛣️ Roads Dept Head (Er. Rajesh Kumar)</div>
+            <div class="text-[10px] text-[var(--muted-foreground)]">Role-based view limited to Potholes & Road repairs</div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="p-3 bg-[var(--background)] border-t border-[var(--border)] text-center text-[11px] text-[var(--muted-foreground)] flex items-center justify-between">
+      <span>CivicConnect AI &bull; Smart Municipal Grievance Portal</span>
+      <span class="text-blue-600 font-bold">WCAG AAA Accessible &bull; Multilingual</span>
+    </footer>
+
+  </div>
+
+  <!-- Client-side Interactive Script -->
+  <script>
+    let currentWizardStep = 1;
+    let selectedCat = 'potholes';
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+      document.querySelectorAll('.nav-tab-btn').forEach(b => {
+        b.classList.remove('bg-blue-600', 'text-white');
+        b.classList.add('bg-slate-100', 'text-slate-700', 'dark:bg-slate-800', 'dark:text-slate-300');
+      });
+
+      const panel = document.getElementById('panel-tab-' + tabId);
+      const navBtn = document.getElementById('nav-tab-' + tabId);
+
+      if (panel) panel.classList.remove('hidden');
+      if (navBtn) {
+        navBtn.classList.add('bg-blue-600', 'text-white');
+        navBtn.classList.remove('bg-slate-100', 'text-slate-700', 'dark:bg-slate-800', 'dark:text-slate-300');
+      }
+    }
+
+    function startWizardWithCategory(cat) {
+      selectedCat = cat;
+      switchTab(2);
+      goToWizardStep(2);
+      setWizardSample(cat === 'streetlights' ? 'light' : (cat === 'garbage' ? 'garbage' : 'pothole'));
+    }
+
+    function selectWizardCat(cat, btn) {
+      selectedCat = cat;
+      document.querySelectorAll('.cat-choice-btn').forEach(b => {
+        b.classList.remove('border-2', 'border-blue-600', 'bg-blue-50', 'dark:bg-blue-950/40');
+        b.classList.add('border', 'border-[var(--border)]', 'bg-[var(--background)]');
+      });
+      btn.classList.add('border-2', 'border-blue-600', 'bg-blue-50', 'dark:bg-blue-950/40');
+      btn.classList.remove('border', 'bg-[var(--background)]');
+    }
+
+    function goToWizardStep(step) {
+      currentWizardStep = step;
+      document.querySelectorAll('.wizard-pane').forEach(p => p.classList.add('hidden'));
+      const activePane = document.getElementById('wstep-' + step);
+      if (activePane) activePane.classList.remove('hidden');
+
+      const titles = [
+        "Step 1 of 5: Select Problem Category",
+        "Step 2 of 5: Describe Problem & Voice Input",
+        "Step 3 of 5: Upload Photos or Video Evidence",
+        "Step 4 of 5: Pinpoint Issue Location",
+        "Step 5 of 5: Review, AI Routing & Submit"
+      ];
+
+      document.getElementById('wizardStepTitle').textContent = titles[step - 1];
+      document.getElementById('wizardStepPercent').textContent = (step * 20) + "% Complete";
+      document.getElementById('wizardBar').style.width = (step * 20) + "%";
+
+      for (let i = 1; i <= 5; i++) {
+        const badge = document.getElementById('step-badge-' + i);
+        if (badge) {
+          if (i <= step) {
+            badge.classList.add('text-blue-600', 'font-bold');
+          } else {
+            badge.classList.remove('text-blue-600', 'font-bold');
+          }
+        }
+      }
+
+      document.getElementById('btnWPrev').classList.toggle('hidden', step === 1);
+      document.getElementById('btnWNext').classList.toggle('hidden', step === 5);
+      document.getElementById('btnWSubmit').classList.toggle('hidden', step !== 5);
+    }
+
+    function nextWizardStep() {
+      if (currentWizardStep < 5) goToWizardStep(currentWizardStep + 1);
+    }
+
+    function prevWizardStep() {
+      if (currentWizardStep > 1) goToWizardStep(currentWizardStep - 1);
+    }
+
+    function onWizardDescChange(text) {
+      const t = (text || '').toLowerCase();
+      const catEl = document.getElementById('wAiCat');
+      const deptEl = document.getElementById('wAiDept');
+      const pEl = document.getElementById('wAiPriority');
+
+      if (t.includes('pothole') || t.includes('road')) {
+        catEl.textContent = 'Road Damage / Pothole';
+        deptEl.textContent = 'Roads & Infrastructure';
+        pEl.textContent = 'HIGH';
+      } else if (t.includes('light') || t.includes('dark') || t.includes('bulb')) {
+        catEl.textContent = 'Broken Streetlights';
+        deptEl.textContent = 'Electricity & Streetlighting';
+        pEl.textContent = 'HIGH';
+      } else if (t.includes('drain') || t.includes('water') || t.includes('sewage')) {
+        catEl.textContent = 'Drainage / Sewage Issue';
+        deptEl.textContent = 'Drainage & Sewerage Operations';
+        pEl.textContent = 'MEDIUM';
+      }
+    }
+
+    function setWizardSample(type) {
+      const desc = document.getElementById('wizardDescInput');
+      if (type === 'pothole') {
+        desc.value = "Large deep pothole on Main Road outside primary school causing two-wheeler skids.";
+      } else if (type === 'light') {
+        desc.value = "Streetlight pole #42 outside Community Hall is broken and dark for 3 days.";
+      } else if (type === 'drain') {
+        desc.value = "Stormwater drain blocked by trash overflowing foul black water onto footpath.";
+      }
+      onWizardDescChange(desc.value);
+    }
+
+    function toggleWizardVoice() {
+      const txt = document.getElementById('btnWizardRecordTxt');
+      const stat = document.getElementById('wizardVoiceStatus');
+      txt.textContent = "Listening (00:03)...";
+      stat.textContent = "Recording audio wave in regional language...";
+      setTimeout(() => {
+        txt.textContent = "Recorded (4.2s) ✓";
+        stat.textContent = "Voice message transcribed: 'Streetlight pole broken near school'";
+        setWizardSample('light');
+      }, 1500);
+    }
+
+    function toggleSampleUpload() {
+      alert("Sample high-resolution photo 'pothole_evidence_main_road.jpg' attached!");
+    }
+
+    function submitWizard() {
+      document.getElementById('wizardSuccessCard').classList.remove('hidden');
+      document.getElementById('wstep-5').classList.add('hidden');
+      document.getElementById('btnWSubmit').classList.add('hidden');
+      document.getElementById('btnWPrev').classList.add('hidden');
+    }
+
+    function trackNewComplaint(id) {
+      document.getElementById('trackInput').value = id;
+      switchTab(3);
+    }
+
+    function searchComplaintTrack() {
+      alert("Retrieved live 10-stage timeline status for " + document.getElementById('trackInput').value);
+    }
+
+    function openChat(id) {
+      document.getElementById('chatTitle').textContent = "Direct Line with Department: " + id;
+      document.getElementById('chatModal').classList.remove('hidden');
+    }
+
+    function closeChat() {
+      document.getElementById('chatModal').classList.add('hidden');
+    }
+
+    function sendChatMsg() {
+      const inp = document.getElementById('chatMsgInput');
+      if (!inp.value.trim()) return;
+      const history = document.getElementById('chatHistory');
+      history.innerHTML += `
+        <div class="p-2 rounded-lg bg-blue-100 dark:bg-blue-950 text-blue-950 dark:text-blue-100 ml-6 text-right">
+          <div class="text-[9px] text-blue-600">Citizen &bull; Just now</div>
+          ${inp.value}
+        </div>
+      `;
+      inp.value = '';
+      history.scrollTop = history.scrollHeight;
+    }
+
+    function toggleLargeText() {
+      document.body.classList.toggle('large-text');
+    }
+
+    function toggleHighContrast() {
+      document.body.classList.toggle('high-contrast');
+    }
+
+    function speakHelp() {
+      if ('speechSynthesis' in window) {
+        const u = new SpeechSynthesisUtterance("Welcome to Civic Connect AI. To report a problem, click the Report button.");
+        window.speechSynthesis.speak(u);
+      } else {
+        alert("Audio Guide: Speak your grievance or click Report a Problem to begin.");
+      }
+    }
+
+    function changeLanguage(lang) {
+      const messages = {
+        en: 'English language enabled.',
+        te: 'తెలుగు భాష ప్రారంభించబడింది. (Telugu Activated)',
+        hi: 'हिन्दी भाषा सक्रिय की गई। (Hindi Activated)',
+        mr: 'मराठी भाषा सुरू केली. (Marathi Activated)'
+      };
+      alert(messages[lang] || messages.en);
+    }
+
+    function openRoleModal() {
+      document.getElementById('roleModal').classList.remove('hidden');
+    }
+
+    function selectRole(role) {
+      document.getElementById('roleModal').classList.add('hidden');
+      if (role === 'dept' || role === 'roads') {
+        switchTab('dept');
+      } else {
+        switchTab(1);
+      }
+    }
+
+    function switchDeptConsole(val) {
+      const titles = {
+        elec: 'Electricity & Streetlighting Department',
+        roads: 'Roads & Municipal Infrastructure Department',
+        swm: 'Solid Waste & Sanitation Department',
+        drain: 'Drainage & Sewerage Operations Department',
+        admin: 'Municipal Commissioner Administration (All Departments)'
+      };
+      document.getElementById('deptConsoleTitle').textContent = titles[val] || 'Department Console';
+    }
+
+    function toggleAppFullScreen() {
+      if (!document.fullscreenElement) {
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen().catch(err => {
+            console.warn("Fullscreen request error:", err);
+          });
+        }
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    }
+  </script>
+</body>
+</html>
